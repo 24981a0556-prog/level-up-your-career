@@ -28,6 +28,7 @@ const LandingRoute = () => {
   const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
+    setChecking(true);
     const check = async () => {
       if (!user) { setChecking(false); return; }
       const { data } = await supabase.from('user_profile').select('id').eq('user_id', user.id).maybeSingle();
@@ -49,6 +50,7 @@ const AuthRoute = () => {
   const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
+    setChecking(true);
     const check = async () => {
       if (!user) { setChecking(false); return; }
       const { data } = await supabase.from('user_profile').select('id').eq('user_id', user.id).maybeSingle();
@@ -70,6 +72,7 @@ const DashboardRoute = () => {
   const [hasProfile, setHasProfile] = useState(false);
 
   useEffect(() => {
+    setChecking(true);
     const check = async () => {
       if (!user) { setChecking(false); return; }
       const { data } = await supabase.from('user_profile').select('id').eq('user_id', user.id).maybeSingle();
