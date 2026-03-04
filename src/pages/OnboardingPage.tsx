@@ -94,7 +94,7 @@ const OnboardingPage = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const { error: profileError } = await supabase.from('user_profile').insert({
+      const { error: profileError } = await supabase.from('user_profile').upsert({
         user_id: user.id,
         name,
         year,
@@ -102,21 +102,21 @@ const OnboardingPage = () => {
         target_role: targetRole,
         timeline_days: timeline,
         goal_preference: goalPref,
-      });
+      }, { onConflict: 'user_id' });
       if (profileError) throw profileError;
 
-      const { error: acadError } = await supabase.from('student_academics').insert({
+      const { error: acadError } = await supabase.from('student_academics').upsert({
         user_id: user.id,
         subjects,
         certifications,
         manual_skills: manualSkills,
         projects,
         cgpa: cgpa ? parseFloat(cgpa) : null,
-      });
+      }, { onConflict: 'user_id' });
       if (acadError) throw acadError;
 
-      // Initialize streak
-      await supabase.from('streaks').insert({ user_id: user.id, streak_count: 0 });
+      // Initialize or reset streak
+      await supabase.from('streaks').upsert({ user_id: user.id, streak_count: 0 }, { onConflict: 'user_id' });
 
       toast.success('Profile created! Welcome to LevelUp!');
       navigate('/dashboard');

@@ -195,7 +195,7 @@ const DashboardPage = () => {
   const handleRedoAssessment = async () => {
     if (!user) return;
     try {
-      // Reset academics and profile career fields, but keep account
+      // Reset academics
       await supabase.from('student_academics').update({
         subjects: [],
         manual_skills: [],
@@ -204,7 +204,7 @@ const DashboardPage = () => {
         cgpa: null,
       }).eq('user_id', user.id);
 
-      // Delete profile so onboarding re-triggers
+      // Delete profile so onboarding re-creates it
       await supabase.from('user_profile').delete().eq('user_id', user.id);
 
       // Delete tasks and reset streak
