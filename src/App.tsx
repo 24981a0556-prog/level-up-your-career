@@ -6,9 +6,11 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
+import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/AuthPage";
 import OnboardingPage from "./pages/OnboardingPage";
 import DashboardPage from "./pages/DashboardPage";
+import EditProfilePage from "./pages/EditProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,6 +20,27 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   if (loading) return <div className="flex min-h-screen items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
+};
+
+const LandingRoute = () => {
+  const { user, loading } = useAuth();
+  const [checking, setChecking] = useState(true);
+  const [hasProfile, setHasProfile] = useState(false);
+
+  useEffect(() => {
+    const check = async () => {
+      if (!user) { setChecking(false); return; }
+      const { data } = await supabase.from('user_profile').select('id').eq('user_id', user.id).maybeSingle();
+      setHasProfile(!!data);
+      setChecking(false);
+    };
+    if (!loading) check();
+  }, [user, loading]);
+
+  if (loading || checking) return <div className="flex min-h-screen items-center justify-center bg-background"><p className="text-muted-foreground">Loading...</p></div>;
+  if (user && hasProfile) return <Navigate to="/dashboard" replace />;
+  if (user && !hasProfile) return <Navigate to="/onboarding" replace />;
+  return <LandingPage />;
 };
 
 const AuthRoute = () => {
@@ -70,12 +93,15 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<AuthRoute />} />
+            <Route path="/" element={<LandingRoute />} />
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/onboarding" element={
               <ProtectedRoute><OnboardingPage /></ProtectedRoute>
             } />
             <Route path="/dashboard" element={<DashboardRoute />} />
+            <Route path="/edit-profile" element={
+              <ProtectedRoute><EditProfilePage /></ProtectedRoute>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

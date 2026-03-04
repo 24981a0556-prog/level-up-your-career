@@ -1,0 +1,1 @@
+CREATE POLICY "Users can delete own profile" ON public.user_profile FOR DELETE TO authenticated USING (auth.uid() = user_id);
