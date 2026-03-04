@@ -26,6 +26,20 @@ const priorityColors: Record<string, string> = {
   Low: 'bg-muted text-muted-foreground border-border',
 };
 
+function buildYouTubeSearchUrl(title: string): string {
+  const query = encodeURIComponent(title);
+  return `https://www.youtube.com/results?search_query=${query}`;
+}
+
+function isValidUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === 'https:' || u.protocol === 'http:';
+  } catch {
+    return false;
+  }
+}
+
 const RoadmapSection = ({ tasks, onToggleTask }: RoadmapSectionProps) => {
   const [expandedWeeks, setExpandedWeeks] = useState<Set<number>>(new Set([1]));
 
@@ -65,47 +79,54 @@ const RoadmapSection = ({ tasks, onToggleTask }: RoadmapSectionProps) => {
             </CardHeader>
             {expanded && (
               <CardContent className="pt-0 px-4 pb-3 space-y-2">
-                {weekTasks.map(task => (
-                  <div
-                    key={task.id}
-                    className={`flex items-start gap-3 rounded-lg border border-border p-3 transition-all ${task.is_completed ? 'opacity-60' : ''}`}
-                  >
-                    <Checkbox
-                      checked={!!task.is_completed}
-                      onCheckedChange={(checked) => onToggleTask(task.id, !!checked)}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-medium ${task.is_completed ? 'line-through' : ''}`}>
-                        {task.title}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
-                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                        {task.skill_tag && (
-                          <Badge variant="outline" className="text-xs">{task.skill_tag}</Badge>
-                        )}
-                        {task.priority && (
-                          <Badge variant="outline" className={`text-xs ${priorityColors[task.priority] || ''}`}>
-                            {task.priority}
-                          </Badge>
-                        )}
-                        {task.estimated_time && (
-                          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Clock className="h-3 w-3" />{task.estimated_time}
-                          </span>
-                        )}
-                        <a
-                          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(task.title)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1 text-xs text-primary hover:underline"
-                        >
-                          <ExternalLink className="h-3 w-3" /> YouTube
-                        </a>
+                {weekTasks.map(task => {
+                  const ytUrl = buildYouTubeSearchUrl(task.title);
+                  const linkValid = isValidUrl(ytUrl);
+
+                  return (
+                    <div
+                      key={task.id}
+                      className={`flex items-start gap-3 rounded-lg border border-border p-3 transition-all ${task.is_completed ? 'opacity-60' : ''}`}
+                    >
+                      <Checkbox
+                        checked={!!task.is_completed}
+                        onCheckedChange={(checked) => onToggleTask(task.id, !!checked)}
+                        className="mt-0.5"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-sm font-medium ${task.is_completed ? 'line-through' : ''}`}>
+                          {task.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                          {task.skill_tag && (
+                            <Badge variant="outline" className="text-xs">{task.skill_tag}</Badge>
+                          )}
+                          {task.priority && (
+                            <Badge variant="outline" className={`text-xs ${priorityColors[task.priority] || ''}`}>
+                              {task.priority}
+                            </Badge>
+                          )}
+                          {task.estimated_time && (
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Clock className="h-3 w-3" />{task.estimated_time}
+                            </span>
+                          )}
+                          {linkValid && (
+                            <a
+                              href={ytUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" /> YouTube
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             )}
           </Card>

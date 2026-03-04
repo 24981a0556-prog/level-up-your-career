@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { lovable } from '@/integrations/lovable';
 import { Button } from '@/components/ui/button';
@@ -7,14 +7,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { Zap, Mail, Lock, User } from 'lucide-react';
+import { Zap, Mail, Lock, ArrowLeft } from 'lucide-react';
 
 const AuthPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const [searchParams] = useSearchParams();
+  const initialMode = searchParams.get('mode');
+  const [isLogin, setIsLogin] = useState(initialMode !== 'signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (initialMode === 'signup') setIsLogin(false);
+    else if (initialMode === 'login') setIsLogin(true);
+  }, [initialMode]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,6 +154,15 @@ const AuthPage = () => {
                 {isLogin ? 'Sign Up' : 'Sign In'}
               </button>
             </p>
+
+            <div className="text-center">
+              <button
+                onClick={() => navigate('/')}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="h-3 w-3" /> Back to home
+              </button>
+            </div>
           </CardContent>
         </Card>
       </div>

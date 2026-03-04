@@ -14,7 +14,8 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import {
   Zap, LogOut, Flame, Target, BookOpen, TrendingUp,
-  RefreshCw, Sparkles, Play, User, GraduationCap, Calendar
+  RefreshCw, Sparkles, Play, User, GraduationCap, Calendar,
+  Edit, RotateCcw
 } from 'lucide-react';
 
 interface ProfileData {
@@ -47,6 +48,27 @@ interface TaskRow {
   user_id: string;
 }
 
+// Weighted scoring for task types
+function getTaskWeight(title: string): number {
+  const lower = title.toLowerCase();
+  if (lower.startsWith('mini project') || lower.startsWith('mini project:')) return 10;
+  if (lower.startsWith('practice')) return 5;
+  if (lower.startsWith('learn')) return 3;
+  return 3;
+}
+
+function computeWeightedReadiness(tasks: TaskRow[], baseScore: number): number {
+  if (tasks.length === 0) return baseScore;
+  const totalWeight = tasks.reduce((sum, t) => sum + getTaskWeight(t.title), 0);
+  const completedWeight = tasks.filter(t => t.is_completed).reduce((sum, t) => sum + getTaskWeight(t.title), 0);
+  if (totalWeight === 0) return baseScore;
+  // Blend base skill-gap score with task completion progress
+  const taskProgress = (completedWeight / totalWeight) * 100;
+  // Weighted: 40% base skill match + 60% task completion
+  const blended = Math.round(baseScore * 0.4 + taskProgress * 0.6);
+  return Math.min(100, blended);
+}
+
 const DashboardPage = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
@@ -59,6 +81,7 @@ const DashboardPage = () => {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [dynamicReadiness, setDynamicReadiness] = useState(0);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -83,7 +106,6 @@ const DashboardPage = () => {
     setTasks(tasksRes.data || []);
     setStreak(streakRes.data || { streak_count: 0, last_completed_date: '' });
 
-    // Compute skill gap
     if (acadRes.data && profileRes.data.target_role && roleRes.data && subjectRes.data) {
       const roleMap = roleRes.data.find(r => r.role_name === profileRes.data.target_role);
       if (roleMap) {
@@ -94,6 +116,7 @@ const DashboardPage = () => {
           roleMap
         );
         setSkillGap(gap);
+        setDynamicReadiness(computeWeightedReadiness(tasksRes.data || [], gap.readinessScore));
       }
     }
 
@@ -109,19 +132,11 @@ const DashboardPage = () => {
     setGenerating(true);
 
     try {
-      // Delete existing tasks
       await supabase.from('roadmap_tasks').delete().eq('user_id', user.id);
-
-      const newTasks = generateRoadmapTasks(
-        skillGap.missingSkills,
-        skillGap.coreMissingSkills,
-        profile.timeline_days
-      );
-
+      const newTasks = generateRoadmapTasks(skillGap.missingSkills, skillGap.coreMissingSkills, profile.timeline_days);
       const inserts = newTasks.map(t => ({ ...t, user_id: user.id }));
       const { error } = await supabase.from('roadmap_tasks').insert(inserts);
       if (error) throw error;
-
       toast.success('Roadmap generated!');
       await loadData();
     } catch (err: any) {
@@ -150,13 +165,11 @@ const DashboardPage = () => {
         const yesterday = new Date(now);
         yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toISOString().split('T')[0];
-
         if (currentStreak.last_completed_date === yesterdayStr || !currentStreak.last_completed_date) {
           newCount += 1;
         } else {
           newCount = 1;
         }
-
         await supabase.from('streaks').upsert({
           user_id: user.id,
           streak_count: newCount,
@@ -165,11 +178,46 @@ const DashboardPage = () => {
       }
     }
 
-    // Refresh
+    // Refresh tasks and streak
     const { data } = await supabase.from('roadmap_tasks').select('*').eq('user_id', user.id).order('week_number');
-    setTasks(data || []);
+    const updatedTasks = data || [];
+    setTasks(updatedTasks);
     const { data: streakData } = await supabase.from('streaks').select('*').eq('user_id', user.id).single();
     if (streakData) setStreak(streakData);
+
+    // Update readiness score dynamically
+    if (skillGap) {
+      const newReadiness = computeWeightedReadiness(updatedTasks, skillGap.readinessScore);
+      setDynamicReadiness(newReadiness);
+    }
+  };
+
+  const handleRedoAssessment = async () => {
+    if (!user) return;
+    try {
+      // Reset academics and profile career fields, but keep account
+      await supabase.from('student_academics').update({
+        subjects: [],
+        manual_skills: [],
+        certifications: [],
+        projects: [],
+        cgpa: null,
+      }).eq('user_id', user.id);
+
+      // Delete profile so onboarding re-triggers
+      await supabase.from('user_profile').delete().eq('user_id', user.id);
+
+      // Delete tasks and reset streak
+      await Promise.all([
+        supabase.from('roadmap_tasks').delete().eq('user_id', user.id),
+        supabase.from('streaks').update({ streak_count: 0 }).eq('user_id', user.id),
+      ]);
+
+      toast.success('Assessment reset! Redirecting to onboarding...');
+      navigate('/onboarding');
+    } catch (err: any) {
+      toast.error(err.message);
+    }
   };
 
   const activateDemo = async () => {
@@ -178,7 +226,6 @@ const DashboardPage = () => {
     setLoading(true);
 
     try {
-      // Upsert demo profile
       await supabase.from('user_profile').upsert({
         user_id: user.id,
         ...DEMO_PROFILE,
@@ -194,7 +241,6 @@ const DashboardPage = () => {
         ...DEMO_STREAK,
       }, { onConflict: 'user_id' });
 
-      // Generate roadmap
       const subjectRes = await supabase.from('subject_maps').select('*');
       const roleRes = await supabase.from('role_maps').select('*');
 
@@ -209,18 +255,14 @@ const DashboardPage = () => {
           );
           setSkillGap(gap);
 
-          // Delete existing tasks and generate new ones
           await supabase.from('roadmap_tasks').delete().eq('user_id', user.id);
           const newTasks = generateRoadmapTasks(gap.missingSkills, gap.coreMissingSkills, DEMO_PROFILE.timeline_days);
           const inserts = newTasks.map(t => ({ ...t, user_id: user.id }));
-
-          // Mark some as completed for demo
           const completedInserts = inserts.map((t, i) => ({
             ...t,
             is_completed: i < 6,
             completed_at: i < 6 ? new Date().toISOString() : null,
           }));
-
           await supabase.from('roadmap_tasks').insert(completedInserts);
         }
       }
@@ -279,9 +321,19 @@ const DashboardPage = () => {
         <div className="grid gap-4 md:grid-cols-3">
           <Card className="shadow-card border-border md:col-span-2 animate-fade-in">
             <CardHeader className="pb-3">
-              <CardTitle className="font-display flex items-center gap-2 text-base">
-                <User className="h-4 w-4 text-primary" /> Profile Summary
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="font-display flex items-center gap-2 text-base">
+                  <User className="h-4 w-4 text-primary" /> Profile Summary
+                </CardTitle>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs" onClick={() => navigate('/edit-profile')}>
+                    <Edit className="h-3 w-3" /> Edit
+                  </Button>
+                  <Button variant="ghost" size="sm" className="gap-1 text-xs text-destructive hover:text-destructive" onClick={handleRedoAssessment}>
+                    <RotateCcw className="h-3 w-3" /> Re-do Assessment
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -320,7 +372,7 @@ const DashboardPage = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="flex justify-center">
-              {skillGap && <ReadinessScore score={skillGap.readinessScore} />}
+              <ReadinessScore score={dynamicReadiness} />
             </CardContent>
           </Card>
         </div>
@@ -369,6 +421,20 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Readiness Score Detail */}
+        <Card className="shadow-card border-border animate-fade-in" style={{ animationDelay: '0.45s' }}>
+          <CardContent className="pt-5">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-sm font-medium font-display">Career Readiness</p>
+              <p className="text-sm font-bold text-primary">{dynamicReadiness}%</p>
+            </div>
+            <Progress value={dynamicReadiness} className="h-3" />
+            <p className="text-xs text-muted-foreground mt-2">
+              Complete tasks to increase your score. Learn tasks: +3pts, Practice: +5pts, Mini Projects: +10pts
+            </p>
+          </CardContent>
+        </Card>
 
         {/* Roadmap */}
         <Card className="shadow-card border-border animate-fade-in" style={{ animationDelay: '0.5s' }}>
