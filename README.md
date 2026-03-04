@@ -1,12 +1,155 @@
-# Welcome to your Lovable project
+## 🚀 LevelUp – Career Readiness Platform
+## 📌 Project Title
+LevelUp – AI-Powered Career Readiness & Skill Development Platform
+
+ 
+## 🎯 Problem Statement
+
+1.Students and early professionals often:
+
+2.Feel confused about career direction
+
+3.Lack clarity on required skills for target roles
+
+4.Consume random learning resources without structure
+
+5.Struggle to measure real progress toward job readiness
+
+Most platforms provide information.
+Very few provide structured action + measurable progress tracking.
+
+There is no unified system that:
+
+Assesses career goals
+
+Generates a structured roadmap
+
+Tracks skill development
+
+Quantifies readiness in a meaningful way
+
+## 💡 Solution Overview
+
+LevelUp is a career readiness platform that:
+
+1.Collects user career goals and background via onboarding
+
+2.Generates a personalized career roadmap
+
+3.Provides curated learning resources
+
+4.Tracks task completion
+
+5.Calculates a dynamic Readiness Score
+
+6.Continuously adapts as users refine their goals
+
+Instead of passive content consumption, users follow a structured growth system.
+
+## ✨ Key Features
+## 🔐 Authentication System
+
+Secure Sign Up / Sign In
+
+Session-based access control
+
+Smart redirect logic
+
+## 🧭Career Onboarding
+
+Career goal selection
+
+Skill level assessment
+
+Target role configuration
+
+Personalized roadmap generation
+
+## 📊 Dashboard
+
+Progress tracking
+
+Task list
+
+Readiness score visualization
+
+Profile editing
+
+Option to re-do onboarding
+
+## 📈 Readiness Score System
+
+Weighted task-based scoring:
+
+Watch resource → +3
+
+Complete mini project → +10
+
+Complete certification → +15
+
+Real-time updates
+
+Visual progress bar
+
+Score capped at 100%
+
+## 🎥 Curated Learning Resources
+
+YouTube integration
+
+Proper embedded or external links
+
+Role-specific content
+
+## 🛠 Profile Management
+
+Edit career goal
+
+Update interests
+
+Modify skill level
+
+Recalculate roadmap dynamically
+
+## 🌐 Landing Page
+
+Clear product positioning
+
+Hero section
+
+Feature explanation
+
+Call-to-action routing logic
+
+## 🧱 Tech Stack
+
+Frontend:
+
+- React,Vite,shadcn-ui,Tailwind CSS
+
+Backend:
+
+Type script,Supabase
+
+Database:
+
+ PostgreSQL 
+
+Authentication:
+
+ Supabase Auth 
+
+Hosting:
+
+Vercel
 
 ## Project info
 
 **URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
 
-## How can I edit this code?
+## ⚙️ Setup Instructions
 
-There are several ways of editing your application.
+There are several ways of editing this application.
 
 **Use Lovable**
 
@@ -49,25 +192,3 @@ npm run dev
 - Select the "Codespaces" tab.
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
