@@ -90,10 +90,13 @@ const OnboardingPage = () => {
     }
   };
 
-  const handleComplete = async () => {
-    if (!user) return;
-    setLoading(true);
-    try {
+const handleComplete = async () => {
+  if (!user) return;
+
+  console.log("USER:", user); // ✅ ADD THIS LINE HERE
+
+  setLoading(true);
+  try {
       const { error: profileError } = await supabase.from('user_profile').upsert({
         user_id: user.id,
         name,
