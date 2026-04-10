@@ -130,13 +130,13 @@ const OnboardingPage = () => {
   const stepIcons = [GraduationCap, BookOpen, Code, Target];
   const stepLabels = ['Profile', 'Academics', 'Skills', 'Goal'];
 
-  const canNext = () => {
-    if (step === 1) return name.trim() && year > 0 && branch;
-    if (step === 2) return subjects.length > 0;
-    if (step === 3) return true;
-    if (step === 4) return targetRole && timeline && goalPref;
-    return false;
-  };
+const canNext = () => {
+  if (step === 1) return name.trim() && year > 0 && branch;
+  if (step === 2) return true; 
+  if (step === 3) return true;
+  if (step === 4) return targetRole && timeline && goalPref;
+  return false;
+};
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
